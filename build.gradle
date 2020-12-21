@@ -1,7 +1,7 @@
 apply plugin: 'java'
 apply plugin: 'application'
 
-mainClassName = 'com.github.emca.Emca'
+mainClassName = 'com.github.emcat.Emcat'
 
 repositories {
     mavenCentral()
@@ -11,7 +11,14 @@ dependencies {
     implementation group: 'net.sourceforge.pmd', name: 'pmd-java', version: '6.29.0'
     implementation group: 'commons-cli', name: 'commons-cli', version: '1.4'
 
-    testImplementation group: 'junit', name: 'junit', version: '4.12'
+    testImplementation(platform('org.junit:junit-bom:5.7.0'))
+    testImplementation('org.junit.jupiter:junit-jupiter')
+
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.7.0")
+}
+
+test {
+    useJUnitPlatform()
 }
 
 run{
