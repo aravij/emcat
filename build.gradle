@@ -1,7 +1,8 @@
 apply plugin: 'java'
 apply plugin: 'application'
 
-mainClassName = 'com.github.emcat.Emcat'
+group 'com.github'
+version '1.0-SNAPSHOT'
 
 repositories {
     mavenCentral()
@@ -9,7 +10,7 @@ repositories {
 
 dependencies {
     implementation group: 'net.sourceforge.pmd', name: 'pmd-java', version: '6.29.0'
-    implementation group: 'commons-cli', name: 'commons-cli', version: '1.4'
+    implementation 'info.picocli:picocli:4.5.2'
 
     testImplementation(platform('org.junit:junit-bom:5.7.0'))
     testImplementation('org.junit.jupiter:junit-jupiter')
@@ -21,12 +22,14 @@ test {
     useJUnitPlatform()
 }
 
+application {
+    mainClassName = 'com.github.emcat.Emcat'
+    applicationDefaultJvmArgs = ["--enable-preview"]
+}
+
 run{
     standardInput = System.in
 }
-
-group 'com.github'
-version '1.0-SNAPSHOT'
 
 sourceCompatibility = 14
 targetCompatibility = 14
