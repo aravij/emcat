@@ -1,0 +1,37 @@
+apply plugin: 'java'
+apply plugin: 'application'
+
+mainClassName = 'com.github.emca.Emca'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation group: 'net.sourceforge.pmd', name: 'pmd-java', version: '6.29.0'
+    implementation group: 'commons-cli', name: 'commons-cli', version: '1.4'
+
+    testImplementation group: 'junit', name: 'junit', version: '4.12'
+}
+
+run{
+    standardInput = System.in
+}
+
+group 'com.github'
+version '1.0-SNAPSHOT'
+
+sourceCompatibility = 14
+targetCompatibility = 14
+
+tasks.withType(JavaCompile) {
+    options.compilerArgs += '--enable-preview'
+}
+
+tasks.withType(Test) {
+    jvmArgs += "--enable-preview"
+}
+
+tasks.withType(JavaExec) {
+    jvmArgs += '--enable-preview'
+}
