@@ -28,10 +28,6 @@ public class MethodMetricsAggregator {
         }
     }
 
-    public boolean isErrorOccurred() {
-        return exception != null;
-    }
-
     public MethodProcessingException getException() {
         return exception;
     }

@@ -1,5 +1,6 @@
 apply plugin: 'java'
 apply plugin: 'application'
+apply plugin: 'pmd'
 
 group 'com.github'
 version '1.0-SNAPSHOT'
@@ -16,6 +17,11 @@ dependencies {
     testImplementation('org.junit.jupiter:junit-jupiter')
 
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.7.0")
+}
+
+pmd {
+    consoleOutput = true
+    ruleSetFiles = files("PMDRuleSet.xml")
 }
 
 test {
