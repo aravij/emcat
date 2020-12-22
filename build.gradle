@@ -22,6 +22,7 @@ dependencies {
 pmd {
     consoleOutput = true
     ruleSetFiles = files("PMDRuleSet.xml")
+    toolVersion = "6.29.0"
 }
 
 test {
