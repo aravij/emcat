@@ -9,13 +9,8 @@ import picocli.CommandLine;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Command;
 
-import com.github.emcat.metric_calculators.MethodDescriptor;
-import com.github.emcat.metric_calculators.MethodMetricsAggregator;
-import com.github.emcat.metric_calculators.MethodMetrics;
-
 import java.io.*;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Comparator;
 import java.util.NoSuchElementException;
 
 @Command(
@@ -25,8 +20,6 @@ import java.util.NoSuchElementException;
     version = "1.0"
 )
 public class Emcat {
-    private final transient MethodMetricsAggregator methodMetricsAggregator = new MethodMetricsAggregator();
-
     @Command(mixinStandardHelpOptions = true)
     public int single(
         @Option(names = {"-f", "--file"}, required = true, description = "File path to Java source code to analyse")
@@ -37,15 +30,15 @@ public class Emcat {
         final String methodName
     ) {
         try {
-            final MethodDescriptor methodDescriptor = new MethodDescriptor(sourceCodeFilePath, className, methodName);
-            final MethodMetrics methodMetrics = methodMetricsAggregator.calculateSingleMethodMetrics(methodDescriptor);
+            final SourceCodeMethod method = new SourceCodeMethod(sourceCodeFilePath, className, methodName);
+            method.calculateMetrics();
 
-            System.out.println("NCSS: " + methodMetrics.getNcss());
-            System.out.println("Cyclomatic complexity: " + methodMetrics.getCyclomaticComplexity());
+            System.out.println("NCSS: " + method.getNcss());
+            System.out.println("Cyclomatic complexity: " + method.getCyclomaticComplexity());
             return 0;
         }
         catch (IOException | NoSuchElementException | ParseException e) {
-            System.err.printf("ERROR: " + e);
+            System.err.println("ERROR: " + e);
         }
 
         return 1;
@@ -67,51 +60,40 @@ public class Emcat {
             Reader batchRawInput = new FileReader(batchFilePath);
             Writer batchRawOutput = new FileWriter(new File(outputPath))
         ) {
-            final CsvToBean<MethodDescriptor> batchInput = createCsvReader(batchRawInput);
+            final CsvToBean<SourceCodeMethod> batchInput = new CsvToBeanBuilder<SourceCodeMethod>(batchRawInput)
+                    .withType(SourceCodeMethod.class)
+                    .withMappingStrategy(createColumnOrderStrategy())
+                    .build();
 
-            final List<MethodMetrics> methodMetrics = new ArrayList<>();
-            for (final MethodDescriptor methodDescriptor : batchInput.parse()) {
+            @SuppressWarnings("PMD.DataflowAnomalyAnalysis")
+            final StatefulBeanToCsv<SourceCodeMethod> batchOutput =
+                    new StatefulBeanToCsvBuilder<SourceCodeMethod>(batchRawOutput)
+                    .withMappingStrategy(createColumnOrderStrategy())
+                    .build();
+
+            for (final SourceCodeMethod sourceCodeMethod : batchInput.parse()) {
                 try {
-                    methodMetrics.add(methodMetricsAggregator.calculateSingleMethodMetrics(methodDescriptor));
+                    sourceCodeMethod.calculateMetrics();
+                    batchOutput.write(sourceCodeMethod);
                 }
                 catch (NoSuchElementException | IOException | ParseException e) {
                     System.err.println("WARNING: " + e);
                 }
             }
 
-            if (methodMetrics.isEmpty()) {
-                System.err.println("ERROR: Nothing to write to output.");
-                return 1;
-            } else {
-                final StatefulBeanToCsv batchOutput = createCsvWriter(batchRawOutput);
-                batchOutput.write(methodMetrics);
-            }
-
             return 0;
         }
     }
 
-    private CsvToBean<MethodDescriptor> createCsvReader(final Reader batchRawInput) {
-        final HeaderColumnNameMappingStrategy columnOrderInputStrategy = new HeaderColumnNameMappingStrategy<>();
-        columnOrderInputStrategy.setType(MethodDescriptor.class);
-        columnOrderInputStrategy.setColumnOrderOnWrite(
-                new FixedOrderComparator(new String[]{
-                        "FILE_PATH",
-                        "CLASS_NAME",
-                        "METHOD_NAME",
-                })
-        );
-
-        return new CsvToBeanBuilder(batchRawInput)
-            .withType(MethodDescriptor.class)
-            .withMappingStrategy(columnOrderInputStrategy)
-            .build();
+    @SuppressWarnings("PMD.DoNotCallSystemExit")
+    public static void main(final String... args) {
+        System.exit(new CommandLine(new Emcat()).execute(args));
     }
 
-    private StatefulBeanToCsv createCsvWriter(final Writer batchRawOutput) {
-        final HeaderColumnNameMappingStrategy columnOrderOutputStrategy = new HeaderColumnNameMappingStrategy<>();
-        columnOrderOutputStrategy.setType(MethodMetrics.class);
-        columnOrderOutputStrategy.setColumnOrderOnWrite(
+    private static HeaderColumnNameMappingStrategy<SourceCodeMethod> createColumnOrderStrategy() {
+        final HeaderColumnNameMappingStrategy<SourceCodeMethod> columnNameOrder = new HeaderColumnNameMappingStrategy<>();
+        columnNameOrder.setType(SourceCodeMethod.class);
+        columnNameOrder.setColumnOrderOnWrite(
                 new FixedOrderComparator(new String[]{
                         "FILE_PATH",
                         "CLASS_NAME",
@@ -121,13 +103,6 @@ public class Emcat {
                 })
         );
 
-        return new StatefulBeanToCsvBuilder(batchRawOutput)
-                .withMappingStrategy(columnOrderOutputStrategy)
-                .build();
-    }
-
-    @SuppressWarnings("PMD.DoNotCallSystemExit")
-    public static void main(final String... args) {
-        System.exit(new CommandLine(new Emcat()).execute(args));
+        return columnNameOrder;
     }
 }
