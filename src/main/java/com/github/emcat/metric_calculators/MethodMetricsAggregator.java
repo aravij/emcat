@@ -2,23 +2,25 @@ package com.github.emcat.metric_calculators;
 
 import net.sourceforge.pmd.lang.Parser;
 import net.sourceforge.pmd.lang.ParserOptions;
-import net.sourceforge.pmd.lang.ast.ParseException;
 import net.sourceforge.pmd.lang.java.JavaLanguageModule;
 import net.sourceforge.pmd.lang.java.ast.*;
+
+import com.google.common.collect.Streams;
 
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.NoSuchElementException;
+import java.util.stream.Stream;
 
 public class MethodMetricsAggregator {
-    private Parser javaParser = new JavaLanguageModule()
+    private final transient Parser javaParser = new JavaLanguageModule()
             .getDefaultVersion()
             .getLanguageVersionHandler()
             .getParser(new ParserOptions());
 
-    public MethodMetrics calculateSingleMethodMetrics(final MethodDescriptor methodDescriptor) throws IOException, ParseException, NoSuchElementException {
-        ASTMethodDeclaration methodDeclaration = getMethodDeclaration(
+    public MethodMetrics calculateSingleMethodMetrics(final MethodDescriptor methodDescriptor) throws IOException {
+        final ASTMethodDeclaration methodDeclaration = getMethodDeclaration(
                 methodDescriptor.getFilePath(),
                 methodDescriptor.getClassName(),
                 methodDescriptor.getMethodName()
@@ -33,38 +35,42 @@ public class MethodMetricsAggregator {
         );
     }
 
-    private ASTMethodDeclaration getMethodDeclaration(String filename, String className, String methodName) throws IOException, ParseException, NoSuchElementException {
-        ASTClassOrInterfaceDeclaration classDeclaration = getClassDeclaration(filename, className);
-        for (ASTAnyTypeBodyDeclaration classInnerDeclaration : classDeclaration.getDeclarations()) {
-            if (classInnerDeclaration.getKind() == ASTAnyTypeBodyDeclaration.DeclarationKind.METHOD) {
-                ASTMethodDeclaration methodDeclaration = (ASTMethodDeclaration) classInnerDeclaration.getDeclarationNode();
-                if (methodDeclaration.getName().equals(methodName)) {
-                    return methodDeclaration;
-                }
-            }
-        }
-
-        throw new NoSuchElementException(String.format("There is no method named %s in class named %s in file %s", methodName, className, filename));
+    private ASTMethodDeclaration getMethodDeclaration(
+            final String filename,
+            final String className,
+            final String methodName
+    ) throws IOException {
+        final ASTClassOrInterfaceDeclaration classDeclaration = getClassDeclaration(filename, className);
+        return Streams.stream(classDeclaration.getDeclarations().iterator())
+            .filter(declaration -> declaration.getKind() == ASTAnyTypeBodyDeclaration.DeclarationKind.METHOD)
+            .map(declaration -> (ASTMethodDeclaration) declaration.getDeclarationNode())
+            .filter(declaration -> declaration.getName().equals(methodName))
+            .findFirst()
+            .orElseThrow(() -> new NoSuchElementException(
+                String.format("There is no method named %s in class named %s in file %s", methodName, className, filename)
+            ));
     }
 
-    private ASTClassOrInterfaceDeclaration getClassDeclaration(String filename, String className) throws IOException, ParseException, NoSuchElementException {
-        ASTCompilationUnit compilationUnit = getCompilationUnit(filename);
-        for (JavaNode child : compilationUnit.children()) {
-            if (child instanceof ASTTypeDeclaration) {
-                for (JavaNode grandChild : child.children()) {
-                    if (grandChild instanceof ASTClassOrInterfaceDeclaration classDeclaration) {
-                        if (!classDeclaration.isInterface() && classDeclaration.getSimpleName().equals(className)) {
-                            return classDeclaration;
-                        }
-                    }
-                }
-            }
-        }
-
-        throw new NoSuchElementException(String.format("There is no class named %s in file %s", className, filename));
+    private ASTClassOrInterfaceDeclaration getClassDeclaration(
+            final String filename,
+            final String className
+    ) throws IOException {
+        final ASTCompilationUnit compilationUnit = getCompilationUnit(filename);
+        return Streams.stream(compilationUnit.children())
+            .filter(item -> item instanceof  ASTTypeDeclaration)
+            .map(item -> Streams.stream(item.children()))
+            .reduce(Stream.empty(), Streams::concat)
+            .filter(item -> item instanceof ASTClassOrInterfaceDeclaration)
+            .map(item -> (ASTClassOrInterfaceDeclaration) item)
+            .filter(classDeclaration ->
+                !classDeclaration.isInterface() && classDeclaration.getSimpleName().equals(className))
+            .findFirst()
+            .orElseThrow(() -> new NoSuchElementException(
+                    String.format("There is no class named %s in file %s", className, filename)
+            ));
     }
 
-    private ASTCompilationUnit getCompilationUnit(String filename) throws IOException, ParseException {
+    private ASTCompilationUnit getCompilationUnit(final String filename) throws IOException {
         try (Reader sourceCodeReader = new FileReader(filename)) {
             return (ASTCompilationUnit) javaParser.parse(filename, sourceCodeReader);
         }
