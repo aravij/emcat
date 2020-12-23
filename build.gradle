@@ -10,8 +10,9 @@ repositories {
 }
 
 dependencies {
-    implementation group: 'net.sourceforge.pmd', name: 'pmd-java', version: '6.29.0'
-    implementation 'info.picocli:picocli:4.5.2'
+    implementation('net.sourceforge.pmd:pmd-java:6.29.0')
+    implementation('info.picocli:picocli:4.5.2')
+    implementation('com.opencsv:opencsv:5.2')
 
     testImplementation(platform('org.junit:junit-bom:5.7.0'))
     testImplementation('org.junit.jupiter:junit-jupiter')

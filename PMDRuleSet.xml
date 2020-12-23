@@ -9,26 +9,32 @@
         My custom rules
     </description>
 
-
     <rule ref="category/java/bestpractices.xml">
         <exclude name="SystemPrintln"/>
     </rule>
+
     <rule ref="category/java/codestyle.xml">
         <exclude name="AtLeastOneConstructor"/>
+        <exclude name="OnlyOneReturn"/>
     </rule>
-    <rule ref="category/java/design.xml" />
+
+    <rule ref="category/java/design.xml">
+        <exclude name="LawOfDemeter"/>
+    </rule>
+
     <rule ref="category/java/errorprone.xml" />
 
     <rule ref="category/java/codestyle.xml/LongVariable">
         <properties>
-            <property name="minimum" value="30" />
+            <property name="minimum" value="35" />
         </properties>
     </rule>
 
     <rule ref="category/java/bestpractices.xml/JUnitTestContainsTooManyAsserts">
         <properties>
-            <property name="maximumAsserts" value="5" />
+            <property name="maximumAsserts" value="2" />
         </properties>
     </rule>
+
 
 </ruleset>

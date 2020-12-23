@@ -2,14 +2,15 @@ package com.github.emcat.metric_calculators;
 
 import org.junit.jupiter.api.Test;
 
-import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.NoSuchElementException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 @SuppressWarnings("PMD.LawOfDemeter")
 public class MethodMetricsAggregatorTest {
     @Test
-    public void testMethodMetrics() {
+    public void testMethodMetrics() throws IOException {
         final MethodMetricsAggregator methodMetricsAggregator = new MethodMetricsAggregator();
         final MethodDescriptor methodDescriptor = new MethodDescriptor(
             "./src/test/java/com/github/emcat/metric_calculators/JavaSourceCodeExample.java",
@@ -17,54 +18,44 @@ public class MethodMetricsAggregatorTest {
                 "methodExample"
         );
 
-        final MethodMetricsData methodMetrics = methodMetricsAggregator.calculateSingleMethodMetrics(methodDescriptor);
-        assertNotNull(methodMetrics, "MethodMetrics is null\n" + methodMetricsAggregator.getException());
-        assertEquals(5, methodMetrics.Ncss(), "Failed to calculate NCSS right");
-        assertEquals(2, methodMetrics.CyclomaticComplexity(), "Failed to calculate Cyclomatic complexity right");
+        final MethodMetrics methodMetrics = methodMetricsAggregator.calculateSingleMethodMetrics(methodDescriptor);
+        assertEquals(5, methodMetrics.getNcss(), "Failed to calculate NCSS right");
+        assertEquals(2, methodMetrics.getCyclomaticComplexity(), "Failed to calculate Cyclomatic complexity right");
     }
 
     @Test
     public void testNotExistingFile() {
-        final MethodMetricsAggregator methodMetricsAggregator = new MethodMetricsAggregator();
-        final MethodDescriptor methodDescriptor = new MethodDescriptor(
-                "NOT_EXISTING_FILE_PATH",
-                "JavaSourceCodeExample",
-                "methodExample"
+        assertThrows(IOException.class,
+                () -> new MethodMetricsAggregator().calculateSingleMethodMetrics(new MethodDescriptor(
+                        "NOT_EXISTING_FILE_PATH",
+                        "JavaSourceCodeExample",
+                        "methodExample"
+                )),
+                "Expects RunTimeException when looking for not existing file"
         );
-
-        final MethodMetricsData methodMetrics = methodMetricsAggregator.calculateSingleMethodMetrics(methodDescriptor);
-        assertNull(methodMetrics, "There should be an error in methodMetricsAggregator, but methodMetrics is not null");
-        assertEquals(methodMetricsAggregator.getException().getMethodDescriptor(), methodDescriptor, "Error from methodMetricsAggregator does not has the same method descriptor");
-        assertEquals(methodMetricsAggregator.getException().getException().getClass(), FileNotFoundException.class, "Exception class must be \"FileNotFoundException\"");
     }
 
     @Test
     public void testNotExistingClass() {
-        final MethodMetricsAggregator methodMetricsAggregator = new MethodMetricsAggregator();
-        final MethodDescriptor methodDescriptor = new MethodDescriptor(
-                "./src/test/java/com/github/emcat/metric_calculators/JavaSourceCodeExample.java",
-                "NOT_EXISTING_CLASS",
-                "methodExample"
+        assertThrows(NoSuchElementException.class,
+                () -> new MethodMetricsAggregator().calculateSingleMethodMetrics(new MethodDescriptor(
+                        "./src/test/java/com/github/emcat/metric_calculators/JavaSourceCodeExample.java",
+                        "NOT_EXISTING_CLASS",
+                        "methodExample"
+                )),
+                "Expects RunTimeException when looking for not existing class"
         );
-
-        final MethodMetricsData methodMetrics = methodMetricsAggregator.calculateSingleMethodMetrics(methodDescriptor);
-        assertNull(methodMetrics, "There should be an error in methodMetricsAggregator, but methodMetrics is not null");
-        assertEquals(methodMetricsAggregator.getException().getMethodDescriptor(), methodDescriptor, "Error from methodMetricsAggregator does not has the same method descriptor");
-        assertEquals(methodMetricsAggregator.getException().getException().getClass(), RuntimeException.class, "Exception class must be \"RuntimeException\"");
     }
 
     @Test
     public void testNotExistingMethod() {
-        final MethodMetricsAggregator methodMetricsAggregator = new MethodMetricsAggregator();
-        final MethodDescriptor methodDescriptor = new MethodDescriptor(
-                "./src/test/java/com/github/emcat/metric_calculators/JavaSourceCodeExample.java",
-                "JavaSourceCodeExample",
-                "NOT_EXISTING_METHOD"
+        assertThrows(NoSuchElementException.class,
+                () -> new MethodMetricsAggregator().calculateSingleMethodMetrics(new MethodDescriptor(
+                        "./src/test/java/com/github/emcat/metric_calculators/JavaSourceCodeExample.java",
+                        "JavaSourceCodeExample",
+                        "NOT_EXISTING_METHOD"
+                )),
+                "Expects RunTimeException when looking for not existing method"
         );
-
-        final MethodMetricsData methodMetrics = methodMetricsAggregator.calculateSingleMethodMetrics(methodDescriptor);
-        assertNull(methodMetrics, "There should be an error in methodMetricsAggregator, but methodMetrics is not null");
-        assertEquals(methodMetricsAggregator.getException().getMethodDescriptor(), methodDescriptor, "Error from methodMetricsAggregator does not has the same method descriptor");
-        assertEquals(methodMetricsAggregator.getException().getException().getClass(), RuntimeException.class, "Exception class must be \"RuntimeException\"");
     }
 }
