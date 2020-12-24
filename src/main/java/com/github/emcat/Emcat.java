@@ -26,36 +26,30 @@ import static java.lang.Integer.MAX_VALUE;
     version = "1.0"
 )
 public class Emcat {
-    @Command(mixinStandardHelpOptions = true)
+    @Command(mixinStandardHelpOptions = true, description = "Calculates metric of single method and print to output")
     public int single(
-        @Option(names = {"-f", "--file"}, required = true, description = "File path to Java source code to analyse")
+        @Option(names = {"-f", "--file"}, required = true, description = "File path to Java source code to analyze")
         final String sourceCodeFilePath,
-        @Option(names = {"-c", "--class_name"}, required = true, description = "Name of the class to analyse")
+        @Option(names = {"-c", "--class_name"}, required = true, description = "Name of the class to analyze")
         final String className,
-        @Option(names = {"-m", "--method_name"}, required = true, description = "Method name to analyse")
+        @Option(names = {"-m", "--method_name"}, required = true, description = "Method name to analyze")
         final String methodName
-    ) {
-        try {
-            final SourceCodeMethodDescriptor methodDescriptor = new SourceCodeMethodDescriptor(
-                sourceCodeFilePath,
-                className,
-                methodName
-            );
+    ) throws IOException {
+        final SourceCodeMethodDescriptor methodDescriptor = new SourceCodeMethodDescriptor(
+            sourceCodeFilePath,
+            className,
+            methodName
+        );
 
-            final SourceCodeMethod method = AstMethodFinder.findAstMethod(methodDescriptor);
+        final SourceCodeMethod method = AstMethodFinder.findAstMethod(methodDescriptor);
 
-            System.out.println("NCSS: " + method.getNcss());
-            System.out.println("Cyclomatic complexity: " + method.getCyclomaticComplexity());
-            return 0;
-        }
-        catch (IOException | NoSuchElementException | ParseException e) {
-            System.err.println("ERROR: " + e);
-        }
+        System.out.println("NCSS: " + method.getNcss());
+        System.out.println("Cyclomatic complexity: " + method.getCyclomaticComplexity());
+        return 0;
 
-        return 1;
     }
 
-    @Command(mixinStandardHelpOptions = true)
+    @Command(mixinStandardHelpOptions = true, description = "Calculate metrics of all method described in batch file")
     public int batch(
         @Option(names = {"-f", "--file"}, required = true, description = "File path to CSV file")
         final String batchFilePath,
@@ -90,13 +84,12 @@ public class Emcat {
         }
     }
 
-    @Command(mixinStandardHelpOptions = true)
+    @Command(mixinStandardHelpOptions = true, description = "Finds all methods in all files in file tree under provided directory ")
     public int discover(
         @Option(
             names = {"-d", "--directory"},
             required = true,
-            description = "File or directory to analyze." +
-                "If a directory is specified, all its files at any depth with '.java' extension are analyzed."
+            description = "Root directory of discovery, keeps files with '.java' extension only"
         )
         final String rootPath,
         @Option(names = {"-o", "--output"}, required = true, description = "Path to output file")
