@@ -2,15 +2,15 @@ apply plugin: 'java'
 apply plugin: 'application'
 apply plugin: 'pmd'
 
-group 'com.github'
-version '1.0-SNAPSHOT'
+group 'com.github.aravij'
+version '0.1.0'
 
 repositories {
     mavenCentral()
 }
 
 dependencies {
-    implementation group: 'net.sourceforge.pmd', name: 'pmd-java', version: '6.29.0'
+    implementation 'net.sourceforge.pmdpmd-java:6.29.0'
     implementation 'info.picocli:picocli:4.5.2'
 
     testImplementation(platform('org.junit:junit-bom:5.7.0'))
