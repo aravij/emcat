@@ -31,6 +31,15 @@ public class SourceCodeMethod extends SourceCodeMethodDescriptor {
         );
     }
 
+    public SourceCodeMethod(
+        final String filePath,
+        final String className,
+        final String methodName,
+        final ASTMethodDeclaration astMethodDeclarationNode
+    ) {
+        this( new SourceCodeMethodDescriptor(filePath, className, methodName), astMethodDeclarationNode);
+    }
+
     public int getNcss() {
         return ncss;
     }

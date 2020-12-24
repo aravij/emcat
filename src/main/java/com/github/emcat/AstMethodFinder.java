@@ -11,6 +11,7 @@ import org.apache.commons.lang3.NotImplementedException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
@@ -51,6 +52,25 @@ public final class AstMethodFinder {
             ));
 
         return new SourceCodeMethod(methodDescriptor, methodDeclaration);
+    }
+
+    public static List<SourceCodeMethod> getAllMethods(final String filePath) throws IOException {
+        final ASTCompilationUnit compilationUnit = getCompilationUnit(filePath);
+        final List<SourceCodeMethod> methods = new ArrayList<>();
+        for (final ASTClassOrInterfaceDeclaration classDeclaration : getAllAstCLassDeclarations(compilationUnit)) {
+            for (final ASTMethodDeclaration methodDeclaration : getAllAstMethodDeclarations(classDeclaration)) {
+                methods.add(
+                    new SourceCodeMethod(
+                        filePath,
+                        classDeclaration.getSimpleName(),
+                        methodDeclaration.getName(),
+                        methodDeclaration
+                    )
+                );
+            }
+        }
+
+        return methods;
     }
 
     private static List<ASTMethodDeclaration> getAllAstMethodDeclarations(final ASTClassOrInterfaceDeclaration classDeclaration) {

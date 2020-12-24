@@ -2,6 +2,8 @@ package com.github.emcat;
 
 import com.opencsv.bean.CsvBindByName;
 
+import java.util.Objects;
+
 // TODO: Add line number to support overloaded methods and constructors
 // TODO: Add text range as extraction opportunity
 @SuppressWarnings("PMD.DataClass")
@@ -57,5 +59,26 @@ public class SourceCodeMethodDescriptor {
 
     public void setMethodName(final String methodName) {
         this.methodName = methodName;
+    }
+
+    @Override
+    public boolean equals(final Object obj) {
+        if (obj == this) {
+            return true;
+        }
+
+        if (!(obj instanceof SourceCodeMethodDescriptor)) {
+            return false;
+        }
+
+        final SourceCodeMethodDescriptor methodDescriptor = (SourceCodeMethodDescriptor) obj;
+        return filePath.equals(methodDescriptor.getFilePath()) &&
+            className.equals(methodDescriptor.getClassName()) &&
+            methodName.equals(methodDescriptor.getMethodName());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(filePath, className, methodName);
     }
 }

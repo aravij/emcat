@@ -20,4 +20,15 @@ public class JavaSourceCodeExample {
 
         return x;                             // NCSS: +1, Cyclomatic: +0
     }
+
+    public int anotherMethod() {
+        return 0;
+    }
+}
+
+@SuppressWarnings("PMD")
+class AnotherClass {
+    public int someMethod() {
+        return 0;
+    }
 }
