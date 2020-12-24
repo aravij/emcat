@@ -10,7 +10,14 @@ import picocli.CommandLine.Option;
 import picocli.CommandLine.Command;
 
 import java.io.*;
+import java.nio.file.FileVisitOption;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.stream.Collectors;
+
+import static java.lang.Integer.MAX_VALUE;
 
 @Command(
     name = "emcat",
@@ -75,6 +82,43 @@ public class Emcat {
                     batchOutput.write(method);
                 }
                 catch (NoSuchElementException | IOException | ParseException e) {
+                    System.err.println("WARNING: " + e);
+                }
+            }
+
+            return 0;
+        }
+    }
+
+    @Command(mixinStandardHelpOptions = true)
+    public int discover(
+        @Option(
+            names = {"-d", "--directory"},
+            required = true,
+            description = "File or directory to analyze." +
+                "If a directory is specified, all its files at any depth with '.java' extension are analyzed."
+        )
+        final String rootPath,
+        @Option(names = {"-o", "--output"}, required = true, description = "Path to output file")
+        final String outputPath
+    ) throws IOException, CsvDataTypeMismatchException, CsvRequiredFieldEmptyException {
+        try (Writer batchRawOutput = new FileWriter(new File(outputPath))) {
+            @SuppressWarnings("PMD.DataflowAnomalyAnalysis")
+            final StatefulBeanToCsv<SourceCodeMethod> output = createBatchOutput(batchRawOutput);
+
+            final List<Path> paths = Files.find(
+                    Path.of(rootPath),
+                    MAX_VALUE,
+                    (path, attrs) -> path.toString().endsWith(".java"),
+                    FileVisitOption.FOLLOW_LINKS
+                )
+                .collect(Collectors.toList());
+
+            for (final Path path : paths) {
+                try {
+                    output.write(AstMethodFinder.getAllMethods(String.valueOf(path)));
+                }
+                catch (IOException | ParseException e) {
                     System.err.println("WARNING: " + e);
                 }
             }
