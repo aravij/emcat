@@ -6,6 +6,7 @@ import net.sourceforge.pmd.lang.java.JavaLanguageModule;
 import net.sourceforge.pmd.lang.java.ast.*;
 
 import com.google.common.collect.Streams;
+import org.apache.commons.lang3.NotImplementedException;
 
 import java.io.FileReader;
 import java.io.IOException;
@@ -15,37 +16,44 @@ import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class AstMethodFinder {
+public final class AstMethodFinder {
     private static final Parser JAVA_PARSER = new JavaLanguageModule()
             .getDefaultVersion()
             .getLanguageVersionHandler()
             .getParser(new ParserOptions());
 
-    public ASTMethodDeclaration findAstMethod(
-            final String filePath,
-            final String className,
-            final String methodName
+    public static SourceCodeMethod findAstMethod(
+        final SourceCodeMethodDescriptor methodDescriptor
     ) throws IOException {
-        final ASTCompilationUnit compilationUnit = getCompilationUnit(filePath);
+        final ASTCompilationUnit compilationUnit = getCompilationUnit(methodDescriptor.getFilePath());
 
         final ASTClassOrInterfaceDeclaration classDeclaration = getAllAstCLassDeclarations(compilationUnit)
             .stream()
-            .filter(cd -> cd.getSimpleName().equals(className))
+            .filter(cd -> cd.getSimpleName().equals(methodDescriptor.getClassName()))
             .findFirst()
             .orElseThrow(() -> new NoSuchElementException(
-                String.format("Can't find class %s in file %s.", className, filePath)
+                String.format(
+                    "Can't find class %s in file %s.",
+                    methodDescriptor.getClassName(),
+                    methodDescriptor.getFilePath())
             ));
 
-        return getAllAstMethodDeclarations(classDeclaration)
+        final ASTMethodDeclaration methodDeclaration = getAllAstMethodDeclarations(classDeclaration)
             .stream()
-            .filter(md -> md.getName().equals(methodName))
+            .filter(md -> md.getName().equals(methodDescriptor.getMethodName()))
             .findFirst()
             .orElseThrow(() -> new NoSuchElementException(
-                String.format("Can't find method %s in class %s in file %s", methodName, className, filePath)
+                String.format(
+                    "Can't find method %s in class %s in file %s",
+                    methodDescriptor.getMethodName(),
+                    methodDescriptor.getClassName(),
+                    methodDescriptor.getFilePath())
             ));
+
+        return new SourceCodeMethod(methodDescriptor, methodDeclaration);
     }
 
-    public List<ASTMethodDeclaration> getAllAstMethodDeclarations(final ASTClassOrInterfaceDeclaration classDeclaration) {
+    private static List<ASTMethodDeclaration> getAllAstMethodDeclarations(final ASTClassOrInterfaceDeclaration classDeclaration) {
         return classDeclaration.getDeclarations()
             .stream()
             .filter(declaration -> declaration.getKind() == ASTAnyTypeBodyDeclaration.DeclarationKind.METHOD)
@@ -53,7 +61,7 @@ public class AstMethodFinder {
             .collect(Collectors.toList());
     }
 
-    public List<ASTClassOrInterfaceDeclaration> getAllAstCLassDeclarations(final ASTCompilationUnit compilationUnit) {
+    private static List<ASTClassOrInterfaceDeclaration> getAllAstCLassDeclarations(final ASTCompilationUnit compilationUnit) {
         return Streams.stream(compilationUnit.children())
             .filter(item -> item instanceof  ASTTypeDeclaration)
             .map(item -> Streams.stream(item.children()))
@@ -64,9 +72,13 @@ public class AstMethodFinder {
             .collect(Collectors.toList());
     }
 
-    public ASTCompilationUnit getCompilationUnit(final String filename) throws IOException {
+    private static ASTCompilationUnit getCompilationUnit(final String filename) throws IOException {
         try (Reader sourceCodeReader = new FileReader(filename)) {
             return (ASTCompilationUnit) JAVA_PARSER.parse(filename, sourceCodeReader);
         }
+    }
+
+    private AstMethodFinder() {
+        throw new NotImplementedException();
     }
 }

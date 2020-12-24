@@ -10,7 +10,6 @@ import picocli.CommandLine.Option;
 import picocli.CommandLine.Command;
 
 import java.io.*;
-import java.util.Comparator;
 import java.util.NoSuchElementException;
 
 @Command(
@@ -30,8 +29,13 @@ public class Emcat {
         final String methodName
     ) {
         try {
-            final SourceCodeMethod method = new SourceCodeMethod(sourceCodeFilePath, className, methodName);
-            method.calculateMetrics();
+            final SourceCodeMethodDescriptor methodDescriptor = new SourceCodeMethodDescriptor(
+                sourceCodeFilePath,
+                className,
+                methodName
+            );
+
+            final SourceCodeMethod method = AstMethodFinder.findAstMethod(methodDescriptor);
 
             System.out.println("NCSS: " + method.getNcss());
             System.out.println("Cyclomatic complexity: " + method.getCyclomaticComplexity());
@@ -60,21 +64,15 @@ public class Emcat {
             Reader batchRawInput = new FileReader(batchFilePath);
             Writer batchRawOutput = new FileWriter(new File(outputPath))
         ) {
-            final CsvToBean<SourceCodeMethod> batchInput = new CsvToBeanBuilder<SourceCodeMethod>(batchRawInput)
-                    .withType(SourceCodeMethod.class)
-                    .withMappingStrategy(createColumnOrderStrategy())
-                    .build();
+            final CsvToBean<SourceCodeMethodDescriptor> batchInput = createBatchInput(batchRawInput);
 
             @SuppressWarnings("PMD.DataflowAnomalyAnalysis")
-            final StatefulBeanToCsv<SourceCodeMethod> batchOutput =
-                    new StatefulBeanToCsvBuilder<SourceCodeMethod>(batchRawOutput)
-                    .withMappingStrategy(createColumnOrderStrategy())
-                    .build();
+            final StatefulBeanToCsv<SourceCodeMethod> batchOutput = createBatchOutput(batchRawOutput);
 
-            for (final SourceCodeMethod sourceCodeMethod : batchInput.parse()) {
+            for (final SourceCodeMethodDescriptor methodDescriptor : batchInput.parse()) {
                 try {
-                    sourceCodeMethod.calculateMetrics();
-                    batchOutput.write(sourceCodeMethod);
+                    final SourceCodeMethod method = AstMethodFinder.findAstMethod(methodDescriptor);
+                    batchOutput.write(method);
                 }
                 catch (NoSuchElementException | IOException | ParseException e) {
                     System.err.println("WARNING: " + e);
@@ -90,19 +88,40 @@ public class Emcat {
         System.exit(new CommandLine(new Emcat()).execute(args));
     }
 
-    private static HeaderColumnNameMappingStrategy<SourceCodeMethod> createColumnOrderStrategy() {
+    private static CsvToBean<SourceCodeMethodDescriptor> createBatchInput(final Reader batchRawInput) {
+        final HeaderColumnNameMappingStrategy<SourceCodeMethodDescriptor> columnNameOrder =
+            new HeaderColumnNameMappingStrategy<>();
+
+        columnNameOrder.setType(SourceCodeMethodDescriptor.class);
+        columnNameOrder.setColumnOrderOnWrite(
+            new FixedOrderComparator(new String[]{
+                "FILE_PATH",
+                "CLASS_NAME",
+                "METHOD_NAME"
+            })
+        );
+
+        return new CsvToBeanBuilder<SourceCodeMethodDescriptor>(batchRawInput)
+            .withType(SourceCodeMethodDescriptor.class)
+            .withMappingStrategy(columnNameOrder)
+            .build();
+    }
+
+    private static StatefulBeanToCsv<SourceCodeMethod> createBatchOutput(final Writer batchRawOutput) {
         final HeaderColumnNameMappingStrategy<SourceCodeMethod> columnNameOrder = new HeaderColumnNameMappingStrategy<>();
         columnNameOrder.setType(SourceCodeMethod.class);
         columnNameOrder.setColumnOrderOnWrite(
-                new FixedOrderComparator(new String[]{
-                        "FILE_PATH",
-                        "CLASS_NAME",
-                        "METHOD_NAME",
-                        "NCSS",
-                        "CYCLOMATIC_COMPLEXITY"
-                })
+            new FixedOrderComparator(new String[]{
+                "FILE_PATH",
+                "CLASS_NAME",
+                "METHOD_NAME",
+                "NCSS",
+                "CYCLOMATIC_COMPLEXITY"
+            })
         );
 
-        return columnNameOrder;
+        return new StatefulBeanToCsvBuilder<SourceCodeMethod>(batchRawOutput)
+            .withMappingStrategy(columnNameOrder)
+            .build();
     }
 }
