@@ -1,8 +1,8 @@
 package com.github.emcat.metric_calculators;
 
-import com.github.emcat.AstMethodFinder;
-import com.github.emcat.SourceCodeMethod;
-import com.github.emcat.SourceCodeMethodDescriptor;
+import com.github.emcat.source_code_method.SourceCodeMethodFactory;
+import com.github.emcat.source_code_method.SourceCodeMethod;
+import com.github.emcat.source_code_method.SourceCodeMethodDescriptor;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SuppressWarnings("PMD.LawOfDemeter")
-public class AstMethodFinderTest {
+public class SourceCodeMethodFactoryTest {
     private final static String SOURCE_CODE_EXAMPLE_PATH =
         "./src/test/java/com/github/emcat/metric_calculators/JavaSourceCodeExample.java";
 
@@ -28,7 +28,7 @@ public class AstMethodFinderTest {
             CLASS_NAME,
             METHOD_NAME
         );
-        final SourceCodeMethod sourceCodeMethod = AstMethodFinder.findAstMethod(sourceCodeMethodDescriptor);
+        final SourceCodeMethod sourceCodeMethod = SourceCodeMethodFactory.createSourCodeMethod(sourceCodeMethodDescriptor);
 
         assertEquals(5, sourceCodeMethod.getNcss(), "Failed to calculate NCSS right");
         assertEquals(2, sourceCodeMethod.getCyclomaticComplexity(), "Failed to calculate Cyclomatic complexity right");
@@ -45,7 +45,7 @@ public class AstMethodFinderTest {
         assertThrows(
             IOException.class,
             () -> {
-                AstMethodFinder.findAstMethod(sourceCodeMethodDescriptor);
+                SourceCodeMethodFactory.createSourCodeMethod(sourceCodeMethodDescriptor);
             },
             "Expects RunTimeException when looking for not existing file"
         );
@@ -62,7 +62,7 @@ public class AstMethodFinderTest {
         assertThrows(
             NoSuchElementException.class,
             () -> {
-                AstMethodFinder.findAstMethod(sourceCodeMethodDescriptor);
+                SourceCodeMethodFactory.createSourCodeMethod(sourceCodeMethodDescriptor);
             },
             "Expects RunTimeException when looking for not existing class"
         );
@@ -79,7 +79,7 @@ public class AstMethodFinderTest {
         assertThrows(
             NoSuchElementException.class,
             () -> {
-                AstMethodFinder.findAstMethod(sourceCodeMethodDescriptor);
+                SourceCodeMethodFactory.createSourCodeMethod(sourceCodeMethodDescriptor);
             },
             "Expects RunTimeException when looking for not existing method"
         );
@@ -87,7 +87,7 @@ public class AstMethodFinderTest {
 
     @Test
     public void testDiscovery() throws IOException {
-        final List<SourceCodeMethod> methods = AstMethodFinder.getAllMethods(SOURCE_CODE_EXAMPLE_PATH);
+        final List<SourceCodeMethod> methods = SourceCodeMethodFactory.createAllSourceCodeMethodFromFile(SOURCE_CODE_EXAMPLE_PATH);
 
         final List<SourceCodeMethodDescriptor> methodDescriptors = methods
             .stream()

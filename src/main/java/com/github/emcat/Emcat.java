@@ -1,5 +1,8 @@
 package com.github.emcat;
 
+import com.github.emcat.source_code_method.SourceCodeMethod;
+import com.github.emcat.source_code_method.SourceCodeMethodDescriptor;
+import com.github.emcat.source_code_method.SourceCodeMethodFactory;
 import com.opencsv.bean.*;
 import com.opencsv.exceptions.CsvDataTypeMismatchException;
 import com.opencsv.exceptions.CsvRequiredFieldEmptyException;
@@ -41,7 +44,7 @@ public class Emcat {
             methodName
         );
 
-        final SourceCodeMethod method = AstMethodFinder.findAstMethod(methodDescriptor);
+        final SourceCodeMethod method = SourceCodeMethodFactory.createSourCodeMethod(methodDescriptor);
 
         System.out.println("NCSS: " + method.getNcss());
         System.out.println("Cyclomatic complexity: " + method.getCyclomaticComplexity());
@@ -72,7 +75,7 @@ public class Emcat {
 
             for (final SourceCodeMethodDescriptor methodDescriptor : batchInput.parse()) {
                 try {
-                    final SourceCodeMethod method = AstMethodFinder.findAstMethod(methodDescriptor);
+                    final SourceCodeMethod method = SourceCodeMethodFactory.createSourCodeMethod(methodDescriptor);
                     batchOutput.write(method);
                 }
                 catch (NoSuchElementException | IOException | ParseException e) {
@@ -109,7 +112,7 @@ public class Emcat {
 
             for (final Path path : paths) {
                 try {
-                    output.write(AstMethodFinder.getAllMethods(String.valueOf(path)));
+                    output.write(SourceCodeMethodFactory.createAllSourceCodeMethodFromFile(String.valueOf(path)));
                 }
                 catch (IOException | ParseException e) {
                     System.err.println("WARNING: " + e);

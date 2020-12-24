@@ -1,4 +1,4 @@
-package com.github.emcat;
+package com.github.emcat.source_code_method;
 
 import net.sourceforge.pmd.lang.Parser;
 import net.sourceforge.pmd.lang.ParserOptions;
@@ -17,13 +17,13 @@ import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public final class AstMethodFinder {
+public final class SourceCodeMethodFactory {
     private static final Parser JAVA_PARSER = new JavaLanguageModule()
             .getDefaultVersion()
             .getLanguageVersionHandler()
             .getParser(new ParserOptions());
 
-    public static SourceCodeMethod findAstMethod(
+    public static SourceCodeMethod createSourCodeMethod(
         final SourceCodeMethodDescriptor methodDescriptor
     ) throws IOException {
         final ASTCompilationUnit compilationUnit = getCompilationUnit(methodDescriptor.getFilePath());
@@ -54,7 +54,7 @@ public final class AstMethodFinder {
         return new SourceCodeMethod(methodDescriptor, methodDeclaration);
     }
 
-    public static List<SourceCodeMethod> getAllMethods(final String filePath) throws IOException {
+    public static List<SourceCodeMethod> createAllSourceCodeMethodFromFile(final String filePath) throws IOException {
         final ASTCompilationUnit compilationUnit = getCompilationUnit(filePath);
         final List<SourceCodeMethod> methods = new ArrayList<>();
         for (final ASTClassOrInterfaceDeclaration classDeclaration : getAllAstCLassDeclarations(compilationUnit)) {
@@ -98,7 +98,7 @@ public final class AstMethodFinder {
         }
     }
 
-    private AstMethodFinder() {
+    private SourceCodeMethodFactory() {
         throw new NotImplementedException();
     }
 }
