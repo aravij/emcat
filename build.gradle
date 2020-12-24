@@ -1,0 +1,55 @@
+apply plugin: 'java'
+apply plugin: 'application'
+apply plugin: 'pmd'
+
+group 'com.github'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation('net.sourceforge.pmd:pmd-java:6.29.0')
+    implementation('info.picocli:picocli:4.5.2')
+    implementation('com.opencsv:opencsv:5.2')
+
+    testImplementation(platform('org.junit:junit-bom:5.7.0'))
+    testImplementation('org.junit.jupiter:junit-jupiter')
+
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.7.0")
+}
+
+pmd {
+    consoleOutput = true
+    ruleSetFiles = files("PMDRuleSet.xml")
+    toolVersion = "6.29.0"
+}
+
+test {
+    useJUnitPlatform()
+}
+
+application {
+    mainClassName = 'com.github.emcat.Emcat'
+    applicationDefaultJvmArgs = ["--enable-preview"]
+}
+
+run{
+    standardInput = System.in
+}
+
+sourceCompatibility = 14
+targetCompatibility = 14
+
+tasks.withType(JavaCompile) {
+    options.compilerArgs += '--enable-preview'
+}
+
+tasks.withType(Test) {
+    jvmArgs += "--enable-preview"
+}
+
+tasks.withType(JavaExec) {
+    jvmArgs += '--enable-preview'
+}
